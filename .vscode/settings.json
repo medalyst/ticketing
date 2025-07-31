@@ -1,0 +1,7 @@
+{
+    "java.import.gradle.java.home": "${workspaceFolder}/.vscode/mise-tools/java",
+    "java.jdt.ls.java.home": "${workspaceFolder}/.vscode/mise-tools/java",
+    "debug.javascript.defaultRuntimeExecutable": {
+        "pwa-node": "${workspaceFolder}/.vscode/mise-tools/node"
+    }
+}
