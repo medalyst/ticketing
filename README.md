@@ -24,8 +24,8 @@ A full-stack ticketing system built with Node.js, Express, MongoDB, React, and T
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd medalyst-ticketing
+git clone https://github.com/medalyst/ticketing.git
+cd ticketing
 
 # Start all services
 docker-compose up
