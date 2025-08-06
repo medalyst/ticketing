@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getTickets, createTicket, updateTicket, deleteTicket, type Ticket } from '../api/tickets';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const styles = {
   container: {
@@ -185,12 +185,15 @@ export default function Tickets() {
   const [showModal, setShowModal] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const { logout } = useAuth();
-   const navigate = useNavigate();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     status: 'OPEN' as 'OPEN' | 'IN_PROGRESS' | 'CLOSED',
   });
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     loadTickets();
@@ -282,29 +285,73 @@ export default function Tickets() {
     return <div style={styles.container}>Loading tickets...</div>;
   }
 
+  // Filter, search, and sort tickets
+  let filteredTickets = tickets.filter(ticket => {
+    const matchesSearch =
+      ticket.title.toLowerCase().includes(search.toLowerCase()) ||
+      (ticket._id && ticket._id.toLowerCase().includes(search.toLowerCase()));
+    const matchesStatus = statusFilter ? ticket.status === statusFilter : true;
+    return matchesSearch && matchesStatus;
+  });
+  filteredTickets = filteredTickets.sort((a, b) => {
+    const aDate = new Date(a.createdAt).getTime();
+    const bDate = new Date(b.createdAt).getTime();
+    return sortOrder === 'asc' ? aDate - bDate : bDate - aDate;
+  });
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
         <h1 style={styles.title}>My Tickets</h1>
         <div style={styles.headerActions}>
           <button style={styles.addButton} onClick={handleAddTicket}>
-          Add New Ticket
-        </button>
-        <button style={styles.logoutButton} onClick={handleLogout}>
+            Add New Ticket
+          </button>
+          <button style={styles.logoutButton} onClick={handleLogout}>
             Logout
-        </button>
+          </button>
         </div>
       </div>
 
-      {tickets.length === 0 ? (
+      <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+        <input
+          style={styles.input}
+          type="text"
+          placeholder="Search by title or ticket number..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <select
+          style={styles.select}
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value)}
+        >
+          <option value="">All Statuses</option>
+          <option value="OPEN">Open</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="CLOSED">Closed</option>
+        </select>
+        <select
+          style={styles.select}
+          value={sortOrder}
+          onChange={e => setSortOrder(e.target.value as 'asc' | 'desc')}
+        >
+          <option value="desc">Newest First</option>
+          <option value="asc">Oldest First</option>
+        </select>
+      </div>
+
+      {filteredTickets.length === 0 ? (
         <div style={styles.emptyState}>
           No tickets found. Create your first ticket!
         </div>
       ) : (
         <div style={styles.ticketGrid}>
-          {tickets.map(ticket => (
+          {filteredTickets.map(ticket => (
             <div key={ticket._id} style={styles.ticketCard}>
-              <h3 style={styles.ticketTitle}>{ticket.title}</h3>
+              <Link to={`/tickets/${ticket._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <h3 style={styles.ticketTitle}>{ticket.title}</h3>
+              </Link>
               <p style={styles.ticketDescription}>
                 {ticket.description || 'No description'}
               </p>
@@ -312,13 +359,13 @@ export default function Tickets() {
                 {ticket.status}
               </div>
               <div style={styles.ticketActions}>
-                <button 
+                <button
                   style={styles.editButton}
                   onClick={() => handleEditTicket(ticket)}
                 >
                   Edit
                 </button>
-                <button 
+                <button
                   style={styles.deleteButton}
                   onClick={() => handleDeleteTicket(ticket._id)}
                 >
