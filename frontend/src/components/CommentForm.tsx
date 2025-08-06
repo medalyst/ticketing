@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface CommentFormProps {
   value: string;
@@ -45,25 +45,53 @@ const buttonDisabledStyle: React.CSSProperties = {
   cursor: 'not-allowed',
 };
 
-const CommentForm: React.FC<CommentFormProps> = ({ value, onChange, onSubmit, loading }) => (
-  <form onSubmit={onSubmit} style={formStyle}>
-    <textarea
-      value={value}
-      onChange={onChange}
-      required
-      rows={3}
-      style={textareaStyle}
-      placeholder="Write your comment here..."
-      disabled={loading}
-    />
-    <button
-      type="submit"
-      style={loading || !value.trim() ? buttonDisabledStyle : buttonStyle}
-      disabled={loading || !value.trim()}
-    >
-      {loading ? 'Adding...' : 'Add Comment'}
-    </button>
-  </form>
-);
+const CommentForm: React.FC<CommentFormProps> = ({ value, onChange, onSubmit, loading }) => {
+  const [error, setError] = useState<string | null>(null);
+
+  const validate = (val: string) => {
+    if (!val.trim()) return 'Comment is required.';
+    if (val.trim().length < 2) return 'Comment must be at least 2 characters.';
+    if (val.length > 300) return 'Comment must be less than 300 characters.';
+    return null;
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e);
+    setError(validate(e.target.value));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    const err = validate(value);
+    setError(err);
+    if (err) {
+      e.preventDefault();
+      return;
+    }
+    onSubmit(e);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={formStyle} noValidate>
+      <textarea
+        value={value}
+        onChange={handleChange}
+        required
+        rows={3}
+        style={textareaStyle}
+        placeholder="Write your comment here..."
+        disabled={loading}
+        maxLength={300}
+      />
+      {error && <span style={{ color: 'red', fontSize: 13 }}>{error}</span>}
+      <button
+        type="submit"
+        style={loading || !value.trim() || !!error ? buttonDisabledStyle : buttonStyle}
+        disabled={loading || !value.trim() || !!error}
+      >
+        {loading ? 'Adding...' : 'Add Comment'}
+      </button>
+    </form>
+  );
+};
 
 export default CommentForm;

@@ -192,6 +192,7 @@ export default function Tickets() {
     description: '',
     status: 'OPEN' as 'OPEN' | 'IN_PROGRESS' | 'CLOSED',
   });
+  const [formErrors, setFormErrors] = useState<{ title?: string; description?: string; status?: string }>({});
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -246,9 +247,28 @@ export default function Tickets() {
     }
   };
 
+  const validateForm = () => {
+    const errors: { title?: string; description?: string; status?: string } = {};
+    if (!formData.title.trim()) {
+      errors.title = 'Title is required.';
+    } else if (formData.title.trim().length < 3) {
+      errors.title = 'Title must be at least 3 characters.';
+    }
+    if (formData.description && formData.description.length > 500) {
+      errors.description = 'Description must be less than 500 characters.';
+    }
+    if (!['OPEN', 'IN_PROGRESS', 'CLOSED'].includes(formData.status)) {
+      errors.status = 'Invalid status.';
+    }
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    const errors = validateForm();
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     try {
       if (editingTicket) {
         // Update existing ticket
@@ -261,9 +281,9 @@ export default function Tickets() {
         const newTicket = await createTicket(formData);
         setTickets([...tickets, newTicket]);
       }
-      
       setShowModal(false);
       setFormData({ title: '', description: '', status: 'OPEN' });
+      setFormErrors({});
     } catch (error) {
       console.error('Failed to save ticket:', error);
       alert('Failed to save ticket');
@@ -385,7 +405,7 @@ export default function Tickets() {
         <div style={styles.modal}>
           <div style={styles.modalContent}>
             <h2>{editingTicket ? 'Edit Ticket' : 'Add New Ticket'}</h2>
-            <form onSubmit={handleSubmit} style={styles.form}>
+            <form onSubmit={handleSubmit} style={styles.form} noValidate>
               <input
                 style={styles.input}
                 type="text"
@@ -393,22 +413,28 @@ export default function Tickets() {
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
+                minLength={3}
               />
+              {formErrors.title && <span style={{ color: 'red', fontSize: 13 }}>{formErrors.title}</span>}
               <textarea
                 style={styles.textarea}
                 placeholder="Description (optional)"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                maxLength={500}
               />
+              {formErrors.description && <span style={{ color: 'red', fontSize: 13 }}>{formErrors.description}</span>}
               <select
                 style={styles.select}
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                required
               >
                 <option value="OPEN">Open</option>
                 <option value="IN_PROGRESS">In Progress</option>
                 <option value="CLOSED">Closed</option>
               </select>
+              {formErrors.status && <span style={{ color: 'red', fontSize: 13 }}>{formErrors.status}</span>}
               <div style={styles.modalActions}>
                 <button
                   type="button"
