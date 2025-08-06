@@ -4,6 +4,7 @@ import Register from './pages/Register';
 import Tickets from './pages/Tickets';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
+  import TicketDetails from './pages/TicketDetails';
 
 function AppRoutes() {
   const { isLoggedIn } = useAuth();
@@ -25,6 +26,7 @@ function AppRoutes() {
           <Navigate to={isLoggedIn ? "/tickets" : "/login"} replace />
         } 
       />
+      <Route path="/tickets/:id" element={<ProtectedRoute><TicketDetails /></ProtectedRoute>} />
       <Route 
         path="*" 
         element={

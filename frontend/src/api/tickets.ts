@@ -39,6 +39,13 @@ export const getTickets = async (): Promise<Ticket[]> => {
   return res.data;
 };
 
+export const fetchTicket = async (id: string): Promise<Ticket> => {
+  const res = await axios.get(`${BASE_URL}/tickets/${id}`, {
+    headers: createAuthHeaders(),
+  });
+  return res.data;
+};
+
 export const createTicket = async (ticketData: CreateTicketData): Promise<Ticket> => {
   const res = await axios.post(`${BASE_URL}/tickets`, ticketData, {
     headers: createAuthHeaders(),

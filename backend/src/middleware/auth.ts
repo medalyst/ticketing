@@ -16,7 +16,7 @@ export const authenticate = (
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    req.userId = (decoded as any).id;
+    req.userId = (decoded as any).userId;
     next();
   } catch {
     res.sendStatus(403);

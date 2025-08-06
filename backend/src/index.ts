@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db';
 import authRoutes from './routes/auth';
 import ticketRoutes from './routes/tickets';
+import commentsRouter from './routes/comments';
 import { setupSwagger } from './config/swagger';
 
 const app = express();
@@ -19,6 +20,7 @@ setupSwagger(app);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
+app.use('/api/comments', commentsRouter);
 
 app.get('/api/ping', (_req, res) => {
   res.send('pong');
