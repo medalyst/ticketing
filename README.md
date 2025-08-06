@@ -7,9 +7,18 @@ A full-stack ticketing system built with Node.js, Express, MongoDB, React, and T
 - **User Authentication**: JWT-based authentication with login/register
 - **Ticket Management**: Create, read, update, and delete tickets
 - **Status Tracking**: Track ticket status (Open, In Progress, Closed)
+- **Commenting**: Users can add, view, and delete comments on tickets. Only the comment's author can delete their own comment.
 - **API Documentation**: Interactive Swagger documentation
 - **Docker Support**: Containerized development environment
 - **TypeScript**: Full TypeScript support for both frontend and backend
+## 💬 Commenting Feature
+
+- On each ticket's detail page, users can:
+  - View all comments for the ticket
+  - Add a new comment (must be logged in)
+  - Delete their own comments
+- Comments display the author's username and creation time
+
 
 ## 📋 Prerequisites
 
