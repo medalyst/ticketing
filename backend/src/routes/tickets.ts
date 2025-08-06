@@ -74,8 +74,51 @@ router.post('/', async (req: AuthRequest, res) => {
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/', async (req: AuthRequest, res) => {
-  const tickets = await Ticket.find({ createdBy: req.userId });
+  const tickets = await Ticket.find();
   res.json(tickets);
+});
+
+/**
+ * @swagger
+ * /tickets/{id}:
+ *   get:
+ *     summary: Get a ticket by ID
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Ticket ID
+ *     responses:
+ *       200:
+ *         description: Ticket found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Ticket'
+ *       404:
+ *         description: Ticket not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/:id', async (req: AuthRequest, res) => {
+  const ticket = await Ticket.findById(req.params.id);
+  if (!ticket) {
+    return res.status(404).json({ message: 'Ticket not found' });
+  }
+  res.json(ticket);
 });
 
 /**
@@ -120,15 +163,19 @@ router.get('/', async (req: AuthRequest, res) => {
  *               $ref: '#/components/schemas/Error'
  */
 router.put('/:id', async (req: AuthRequest, res) => {
-  const ticket = await Ticket.findOneAndUpdate(
-    { _id: req.params.id, createdBy: req.userId },
-    req.body,
-    { new: true }
-  );
+  const ticket = await Ticket.findById(req.params.id);
   if (!ticket) {
     return res.status(404).json({ message: 'Ticket not found' });
   }
-  res.json(ticket);
+  if (!ticket.createdBy || ticket.createdBy.toString() !== req.userId) {
+    return res.status(403).json({ message: 'Forbidden: You can only edit your own tickets' });
+  }
+  const updated = await Ticket.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true }
+  );
+  res.json(updated);
 });
 
 /**
@@ -171,13 +218,14 @@ router.put('/:id', async (req: AuthRequest, res) => {
  *               $ref: '#/components/schemas/Error'
  */
 router.delete('/:id', async (req: AuthRequest, res) => {
-  const ticket = await Ticket.findOneAndDelete({
-    _id: req.params.id,
-    createdBy: req.userId,
-  });
+  const ticket = await Ticket.findById(req.params.id);
   if (!ticket) {
     return res.status(404).json({ message: 'Ticket not found' });
   }
+  if (!ticket.createdBy || ticket.createdBy.toString() !== req.userId) {
+    return res.status(403).json({ message: 'Forbidden: You can only delete your own tickets' });
+  }
+  await Ticket.findByIdAndDelete(req.params.id);
   res.json({ message: 'Ticket deleted' });
 });
 
