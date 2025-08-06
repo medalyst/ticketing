@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { getTickets, createTicket, updateTicket, deleteTicket, type Ticket } from '../api/tickets';
 import { useAuth } from '../context/AuthContext';
+import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
 const styles = {
@@ -194,6 +195,7 @@ export default function Tickets() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     loadTickets();
@@ -302,7 +304,7 @@ export default function Tickets() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>My Tickets</h1>
+        <h1 style={styles.title}>All Tickets</h1>
         <div style={styles.headerActions}>
           <button style={styles.addButton} onClick={handleAddTicket}>
             Add New Ticket
@@ -358,20 +360,22 @@ export default function Tickets() {
               <div style={getStatusStyle(ticket.status)}>
                 {ticket.status}
               </div>
-              <div style={styles.ticketActions}>
-                <button
-                  style={styles.editButton}
-                  onClick={() => handleEditTicket(ticket)}
-                >
-                  Edit
-                </button>
-                <button
-                  style={styles.deleteButton}
-                  onClick={() => handleDeleteTicket(ticket._id)}
-                >
-                  Delete
-                </button>
-              </div>
+              {user && ticket.createdBy === user.userId && (
+                <div style={styles.ticketActions}>
+                  <button
+                    style={styles.editButton}
+                    onClick={() => handleEditTicket(ticket)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    style={styles.deleteButton}
+                    onClick={() => handleDeleteTicket(ticket._id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
