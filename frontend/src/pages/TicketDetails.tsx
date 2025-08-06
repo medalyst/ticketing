@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CommentItem from '../components/CommentItem';
 import CommentForm from '../components/CommentForm';
 import { useParams } from 'react-router-dom';
@@ -9,6 +10,7 @@ import type { Comment } from '../../../shared/types/comment';
 
 const TicketDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [ticket, setTicket] = useState<any>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -100,6 +102,23 @@ const TicketDetails: React.FC = () => {
 
   return (
     <div style={pageStyles.container}>
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          marginBottom: 18,
+          background: '#eee',
+          border: 'none',
+          borderRadius: 6,
+          padding: '7px 18px',
+          fontSize: 15,
+          cursor: 'pointer',
+          color: '#333',
+          fontWeight: 500,
+          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+        }}
+      >
+        ← Back
+      </button>
       <h2 style={pageStyles.title}>Ticket Details</h2>
       <div>
         <div style={pageStyles.meta}><b>ID:</b> {ticket._id}</div>
