@@ -2,6 +2,7 @@ import express from 'express';
 import {Comment} from '../models/Comment';
 import {Ticket} from '../models/Ticket';
 import {authenticate} from '../middleware/auth';
+import { validateCommentRequest } from '../middleware/validation';
 
 interface AuthRequest extends express.Request {
     userId?: string;
@@ -107,12 +108,12 @@ router.get('/ticket/:ticketId', async (req: AuthRequest, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', async (req: AuthRequest, res) => {
+router.post('/', validateCommentRequest, async (req: AuthRequest, res) => {
     try {
         const {content, ticketId} = req.body;
 
-        if (!content || !ticketId) {
-            return res.status(400).json({message: 'Content and ticketId are required'});
+        if (!ticketId) {
+            return res.status(400).json({message: 'Ticket ID is required'});
         }
 
         // Verify that the ticket exists and belongs to the user
@@ -126,7 +127,7 @@ router.post('/', async (req: AuthRequest, res) => {
         }
 
         const comment = await Comment.create({
-            content,
+            content: content.trim(),
             ticketId,
             userId: req.userId,
             username: req.username,

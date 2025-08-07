@@ -2,12 +2,18 @@ import { useState, useEffect } from 'react';
 import { getTickets, createTicket, updateTicket, deleteTicket, type Ticket, type GetTicketsParams } from '../api/tickets';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import InputField from '../components/InputField';
+import Modal from '../components/Modal';
+import { validateTicketTitle, validateTicketDescription } from '../utils/validation';
+import { Plus, LogOut, Search, Filter, SortAsc, SortDesc, Edit2, Trash2, Eye, MessageSquare } from 'lucide-react';
 
 export default function Tickets() {
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const { logout, user } = useAuth();
     const navigate = useNavigate();
 
@@ -22,6 +28,10 @@ export default function Tickets() {
         description: '',
         status: 'OPEN' as 'OPEN' | 'IN_PROGRESS' | 'CLOSED',
     });
+
+    // Validation states
+    const [titleError, setTitleError] = useState('');
+    const [descriptionError, setDescriptionError] = useState('');
 
     useEffect(() => {
         loadTickets();
@@ -44,9 +54,10 @@ export default function Tickets() {
 
             const ticketsData = await getTickets(params);
             setTickets(ticketsData);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to load tickets:', error);
-            alert('Failed to load tickets');
+            setErrorMessage('Failed to load tickets. Please try again.');
+            setShowErrorModal(true);
         } finally {
             setLoading(false);
         }
@@ -60,6 +71,8 @@ export default function Tickets() {
     const handleAddTicket = () => {
         setEditingTicket(null);
         setFormData({ title: '', description: '', status: 'OPEN' });
+        setTitleError('');
+        setDescriptionError('');
         setShowModal(true);
     };
 
@@ -70,6 +83,8 @@ export default function Tickets() {
             description: ticket.description || '',
             status: ticket.status,
         });
+        setTitleError('');
+        setDescriptionError('');
         setShowModal(true);
     };
 
@@ -83,14 +98,29 @@ export default function Tickets() {
         try {
             await deleteTicket(id);
             setTickets(tickets.filter(ticket => ticket._id !== id));
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to delete ticket:', error);
-            alert('Failed to delete ticket');
+            setErrorMessage('Failed to delete ticket. Please try again.');
+            setShowErrorModal(true);
         }
+    };
+
+    const validateForm = (): boolean => {
+        const titleValidation = validateTicketTitle(formData.title);
+        const descriptionValidation = validateTicketDescription(formData.description);
+
+        setTitleError(titleValidation.isValid ? '' : titleValidation.error || '');
+        setDescriptionError(descriptionValidation.isValid ? '' : descriptionValidation.error || '');
+
+        return titleValidation.isValid && descriptionValidation.isValid;
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            return;
+        }
 
         try {
             if (editingTicket) {
@@ -107,9 +137,13 @@ export default function Tickets() {
 
             setShowModal(false);
             setFormData({ title: '', description: '', status: 'OPEN' });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save ticket:', error);
-            alert('Failed to save ticket');
+            setErrorMessage(
+                error?.response?.data?.message || 
+                'Failed to save ticket. Please try again.'
+            );
+            setShowErrorModal(true);
         }
     };
 
@@ -144,20 +178,25 @@ export default function Tickets() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 animate-slide-in">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">My Tickets</h1>
+                        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                            <MessageSquare className="h-8 w-8 text-blue-600" />
+                            My Tickets
+                        </h1>
                         <p className="text-gray-600 mt-1">Welcome back, {user?.username}!</p>
                     </div>
                     <div className="flex gap-3">
                         <button
                             onClick={handleAddTicket}
-                            className="btn btn-primary px-6 py-3 rounded-lg"
+                            className="btn btn-primary px-6 py-3 rounded-lg flex items-center gap-2"
                         >
+                            <Plus size={20} />
                             Add New Ticket
                         </button>
                         <button
                             onClick={handleLogout}
-                            className="btn btn-danger px-6 py-3 rounded-lg"
+                            className="btn btn-danger px-6 py-3 rounded-lg flex items-center gap-2"
                         >
+                            <LogOut size={20} />
                             Logout
                         </button>
                     </div>
@@ -167,7 +206,10 @@ export default function Tickets() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* Search */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <Search size={16} />
+                                Search
+                            </label>
                             <input
                                 type="text"
                                 value={searchTerm}
@@ -179,7 +221,10 @@ export default function Tickets() {
 
                         {/* Status Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <Filter size={16} />
+                                Status
+                            </label>
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value as any)}
@@ -207,7 +252,10 @@ export default function Tickets() {
 
                         {/* Sort Order */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Order</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                {sortOrder === 'desc' ? <SortDesc size={16} /> : <SortAsc size={16} />}
+                                Order
+                            </label>
                             <select
                                 value={sortOrder}
                                 onChange={(e) => setSortOrder(e.target.value as any)}
@@ -263,8 +311,9 @@ export default function Tickets() {
                                             e.stopPropagation();
                                             handleViewTicket(ticket._id);
                                         }}
-                                        className="btn btn-primary px-4 py-2 text-sm rounded-lg"
+                                        className="btn btn-primary px-4 py-2 text-sm rounded-lg flex items-center justify-center gap-2"
                                     >
+                                        <Eye size={16} />
                                         View Details
                                     </button>
                                     <button
@@ -272,8 +321,9 @@ export default function Tickets() {
                                             e.stopPropagation();
                                             handleEditTicket(ticket);
                                         }}
-                                        className="btn btn-warning px-4 py-2 text-sm rounded-lg"
+                                        className="btn btn-warning px-4 py-2 text-sm rounded-lg flex items-center justify-center gap-2"
                                     >
+                                        <Edit2 size={16} />
                                         Edit
                                     </button>
                                     <button
@@ -281,8 +331,9 @@ export default function Tickets() {
                                             e.stopPropagation();
                                             handleDeleteTicket(ticket._id);
                                         }}
-                                        className="btn btn-danger px-4 py-2 text-sm rounded-lg"
+                                        className="btn btn-danger px-4 py-2 text-sm rounded-lg flex items-center justify-center gap-2"
                                     >
+                                        <Trash2 size={16} />
                                         Delete
                                     </button>
                                 </div>
@@ -300,17 +351,15 @@ export default function Tickets() {
                             </h2>
 
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                                    <input
-                                        type="text"
-                                        value={formData.title}
-                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                        placeholder="Ticket title"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                                        required
-                                    />
-                                </div>
+                                <InputField
+                                    type="text"
+                                    label="Title"
+                                    value={formData.title}
+                                    onChange={(value) => setFormData({ ...formData, title: value })}
+                                    placeholder="Ticket title"
+                                    required
+                                    error={titleError}
+                                />
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -319,8 +368,13 @@ export default function Tickets() {
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                         placeholder="Description (optional)"
                                         rows={4}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                        className={`w-full px-3 py-2 border rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                                            descriptionError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                                        }`}
                                     />
+                                    {descriptionError && (
+                                        <p className="text-sm text-red-600 mt-1 animate-fade-in">{descriptionError}</p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -355,6 +409,21 @@ export default function Tickets() {
                         </div>
                     </div>
                 )}
+
+                {/* Error Modal */}
+                <Modal
+                    isOpen={showErrorModal}
+                    onClose={() => setShowErrorModal(false)}
+                    title="Error"
+                >
+                    <p className="text-gray-700 mb-4">{errorMessage}</p>
+                    <button
+                        onClick={() => setShowErrorModal(false)}
+                        className="btn btn-primary px-4 py-2 rounded-lg"
+                    >
+                        Close
+                    </button>
+                </Modal>
             </div>
         </div>
     );

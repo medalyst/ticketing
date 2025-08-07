@@ -1,6 +1,7 @@
 import express, { Response, NextFunction } from 'express';
 import { Ticket } from '../models/Ticket';
 import { authenticate } from '../middleware/auth';
+import { validateTicketRequest } from '../middleware/validation';
 
 interface AuthRequest extends express.Request {
     userId?: string;
@@ -39,15 +40,20 @@ router.use(authenticate);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/', async (req: AuthRequest, res) => {
-    const { title, description, status } = req.body;
-    const ticket = await Ticket.create({
-        title,
-        description,
-        status,
-        createdBy: req.userId,
-    });
-    res.status(201).json(ticket);
+router.post('/', validateTicketRequest, async (req: AuthRequest, res) => {
+    try {
+        const { title, description, status } = req.body;
+        const ticket = await Ticket.create({
+            title: title.trim(),
+            description: description?.trim(),
+            status: status || 'OPEN',
+            createdBy: req.userId,
+        });
+        res.status(201).json(ticket);
+    } catch (error) {
+        console.error('Error creating ticket:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
 });
 
 /**
@@ -230,16 +236,28 @@ router.get('/:id', async (req: AuthRequest, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:id', async (req: AuthRequest, res) => {
-    const ticket = await Ticket.findOneAndUpdate(
-        { _id: req.params.id, createdBy: req.userId },
-        req.body,
-        { new: true }
-    );
-    if (!ticket) {
-        return res.status(404).json({ message: 'Ticket not found' });
+router.put('/:id', validateTicketRequest, async (req: AuthRequest, res) => {
+    try {
+        const { title, description, status } = req.body;
+        const updateData: any = {};
+        
+        if (title) updateData.title = title.trim();
+        if (description !== undefined) updateData.description = description?.trim();
+        if (status) updateData.status = status;
+        
+        const ticket = await Ticket.findOneAndUpdate(
+            { _id: req.params.id, createdBy: req.userId },
+            updateData,
+            { new: true }
+        );
+        if (!ticket) {
+            return res.status(404).json({ message: 'Ticket not found' });
+        }
+        res.json(ticket);
+    } catch (error) {
+        console.error('Error updating ticket:', error);
+        res.status(500).json({ message: 'Server error' });
     }
-    res.json(ticket);
 });
 
 /**

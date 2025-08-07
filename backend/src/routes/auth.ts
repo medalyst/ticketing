@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {User} from '../models/User';
+import { validateAuthRequest } from '../middleware/validation';
 
 const router = express.Router();
 
@@ -31,20 +32,24 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/register', async (req, res) => {
+router.post('/register', validateAuthRequest, async (req, res) => {
     const {username, password} = req.body;
 
     try {
-        const existingUser = await User.findOne({username});
+        // Trim username for consistency
+        const trimmedUsername = username.trim();
+        
+        const existingUser = await User.findOne({username: trimmedUsername});
         if (existingUser) {
-            return res.status(400).json({message: 'User already exists'});
+            return res.status(400).json({message: 'Username already exists'});
         }
 
         const hashedPassword = await bcrypt.hash(password, 12);
-        const user = await User.create({username, password: hashedPassword});
+        const user = await User.create({username: trimmedUsername, password: hashedPassword});
 
         res.status(201).json({_id: user._id, username: user.username});
     } catch (error) {
+        console.error('Registration error:', error);
         res.status(500).json({message: 'Server error'});
     }
 });
@@ -75,13 +80,16 @@ router.post('/register', async (req, res) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/login', async (req, res) => {
+router.post('/login', validateAuthRequest, async (req, res) => {
     const {username, password} = req.body;
 
     try {
-        const user = await User.findOne({username});
+        // Trim username for consistency
+        const trimmedUsername = username.trim();
+        
+        const user = await User.findOne({username: trimmedUsername});
         if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({message: 'Invalid credentials'});
+            return res.status(401).json({message: 'Invalid username or password'});
         }
 
         const token = jwt.sign(
@@ -92,6 +100,7 @@ router.post('/login', async (req, res) => {
         res.json({token, user: {_id: user._id, username: user.username}});
 
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({message: 'Server error'});
     }
 });
