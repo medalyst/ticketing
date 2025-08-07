@@ -32,8 +32,34 @@ const createAuthHeaders = () => ({
   Authorization: `Bearer ${getAuthToken()}`,
 });
 
-export const getTickets = async (): Promise<Ticket[]> => {
-  const res = await axios.get(`${BASE_URL}/tickets`, {
+export interface GetTicketsParams {
+    search?: string;
+    status?: 'OPEN' | 'IN_PROGRESS' | 'CLOSED';
+    sortBy?: 'createdAt' | 'title';
+    sortOrder?: 'asc' | 'desc';
+}
+
+export const getTickets = async (params?: GetTicketsParams): Promise<Ticket[]> => {
+    const queryParams = new URLSearchParams();
+
+    if (params) {
+        if (params.search) queryParams.append('search', params.search);
+        if (params.status) queryParams.append('status', params.status);
+        if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+        if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+    }
+
+    const queryString = queryParams.toString();
+    const url = queryString ? `${BASE_URL}/tickets?${queryString}` : `${BASE_URL}/tickets`;
+
+    const res = await axios.get(url, {
+        headers: createAuthHeaders(),
+    });
+    return res.data;
+};
+
+export const getTicket = async (id: string): Promise<Ticket> => {
+    const res = await axios.get(`${BASE_URL}/tickets/${id}`, {
     headers: createAuthHeaders(),
   });
   return res.data;
