@@ -3,7 +3,7 @@
 
 @layer components {
     .btn {
-        @apply inline-flex items-center justify-center font-medium transition-all duration-200 ease-in-out;
+        @apply inline-flex items-center justify-center font-medium transition-all duration-200 ease-in-out cursor-pointer;
     }
 
     .btn-primary {

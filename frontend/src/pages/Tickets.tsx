@@ -283,7 +283,7 @@ export default function Tickets() {
                         {tickets.map((ticket, index) => (
                             <div
                                 key={ticket._id}
-                                className="card p-6 cursor-pointer group animate-fade-in hover:scale-105 transition-transform duration-200"
+                                className="card p-6 cursor-pointer group animate-fade-in hover:scale-105 transition-transform duration-200 flex flex-col justify-between"
                                 style={{ animationDelay: `${index * 0.1}s` }}
                                 onClick={() => handleViewTicket(ticket._id)}
                             >
