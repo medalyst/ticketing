@@ -54,10 +54,9 @@ router.get('/ticket/:ticketId', async (req: AuthRequest, res) => {
     try {
         const {ticketId} = req.params;
 
-        // Verify that the ticket exists and belongs to the user
+        // Verify that the ticket exists
         const ticket = await Ticket.findOne({
             _id: ticketId,
-            createdBy: req.userId
         });
 
         if (!ticket) {
@@ -119,7 +118,6 @@ router.post('/', validateCommentRequest, async (req: AuthRequest, res) => {
         // Verify that the ticket exists and belongs to the user
         const ticket = await Ticket.findOne({
             _id: ticketId,
-            createdBy: req.userId
         });
 
         if (!ticket) {

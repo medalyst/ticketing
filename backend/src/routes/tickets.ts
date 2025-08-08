@@ -111,7 +111,7 @@ router.get('/', async (req: AuthRequest, res) => {
         const { search, status, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
 
         // Build filter query
-        const filter: any = { createdBy: req.userId };
+        const filter: any = {};
 
         // Add status filter
         if (status) {
@@ -181,7 +181,6 @@ router.get('/:id', async (req: AuthRequest, res) => {
     try {
         const ticket = await Ticket.findOne({
             _id: req.params.id,
-            createdBy: req.userId
         });
 
         if (!ticket) {
@@ -246,7 +245,7 @@ router.put('/:id', validateTicketRequest, async (req: AuthRequest, res) => {
         if (status) updateData.status = status;
         
         const ticket = await Ticket.findOneAndUpdate(
-            { _id: req.params.id, createdBy: req.userId },
+            { _id: req.params.id },
             updateData,
             { new: true }
         );
