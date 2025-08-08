@@ -38,6 +38,18 @@ docker-compose up --build
 
 # To stop all services
 docker-compose down
+
+# To run backend tests
+docker-compose exec backend pnpm test
+
+# To run backend tests with coverage
+docker-compose exec backend pnpm test:coverage
+
+# To run frontend tests
+docker-compose exec frontend pnpm test
+
+# To run frontend tests with coverage
+docker-compose exec frontend pnpm test:coverage
 ```
 
 **Services will be available at:**
